@@ -1,4 +1,30 @@
-#fluidTextureManipulators.py
+'''
+================================================================================
+* VERSION 1.0
+================================================================================
+* AUTHOR:
+Mathieu Sauvage mathieu@hiddenforest.fr
+================================================================================
+* INTERNET SOURCE:
+https://github.com/mathieuSauvage/MayaFluidTextureManipulators.git
+================================================================================
+* MAIN FUNCTION:
+FTM_addFluidTextureManipulators( fluid )
+================================================================================
+* DESCRIPTION:
+This is a Maya python script that generate a rig of controllers to manipulate
+the texture parameters of a fluid (origin, scale, rotate, implode position).
+Please see the full description at the INTERNET SOURCE.
+================================================================================
+* USAGE:
+- select a fluid then copy/paste this into a Maya python script editor and
+execute it.
+- put the script into a python script folder that Maya know, then use an import
+command to use the script and call the main function with appropriate parameters.  
+================================================================================
+* TODO:
+================================================================================
+'''
 
 import pymel.core as pm
 
@@ -152,6 +178,10 @@ def FTM_createRulerTransformGroup( fluidTransform, control, rulerTrans ):
 	grpShapeTransform.addAttr('weight',k=True)
 	pm.connectAttr( grpShapeTransform+'.weight', constraint+'.target[0].targetWeight', f=True)
 
+	FTM_lockAndHide(grpCtrlRotateCancel, ['tx','ty','tz','sx','sy','sz','v'])
+	FTM_lockAndHide(grpBaseRuler, ['tx','ty','tz','sx','sy','sz','v'])
+	FTM_lockAndHide(grpShapeTransform, ['tx','ty','tz','sx','sy','sz','v'])
+
 	return grpShapeTransform
 
 def FTM_createBaseControl( fluidTransformParent ):
@@ -203,26 +233,23 @@ def FTM_createBaseControl( fluidTransformParent ):
 	pm.connectAttr( mult+'.output', cv+'.rulerSmallSize')
 
 	# Rulers
-
-	# transform on the shape should be 
-	# mode rotationFollow Parent counter of the value of basePlan
-	# mode rotationFollow Free counter of the control rotation
-
-	transformRuler = pm.group(em=True, n='rulerRotate#')
+	transformRuler = pm.group(em=True, n='ruler#')
 	pm.parent(transformRuler,cv,r=True)
+	# there is a special transform on the shape to have 2 spaces possible for the shape
+	# rotateSpace=parent the rulers is rotated by the main Control like a jormal child
+	# rotateSpace=free the rulers is independant from the main Control rotation
 	grpDummyTransformRuler = FTM_createRulerTransformGroup( fluidTransformParent, cv, transformRuler )
-
 	FTM_createRulerPlane( cv, (0,1,0), True, transformRuler, grpDummyTransformRuler )
 	FTM_createRulerPlane( cv, (0,1,0), False, transformRuler, grpDummyTransformRuler )
 	FTM_createRulerPlane( cv, (1,0,0), True, transformRuler, grpDummyTransformRuler )
 	FTM_createRulerPlane( cv, (1,0,0), False, transformRuler, grpDummyTransformRuler )
 	FTM_createRulerPlane( cv, (0,0,1), True, transformRuler, grpDummyTransformRuler )
 	FTM_createRulerPlane( cv, (0,0,1), False, transformRuler, grpDummyTransformRuler )
-	transformRuler.addAttr( 'rotateSpace', at='enum', en='parent:Free:', k=True)
+	transformRuler.addAttr( 'rotateSpace', at='enum', en='parent:free:', k=True)
 	pm.connectAttr(transformRuler+'.rotateSpace', grpDummyTransformRuler+'.weight')
 	FTM_lockAndHide(transformRuler, ['tx','ty','tz','sx','sy','sz','v'])
 
-	#nurbs cube attribute calculations
+	#nurbs cube attribute size calculations
 	mult1 = pm.createNode('multDoubleLinear')
 	pm.setAttr(mult1+'.input2', 0.5)
 	pm.connectAttr( cv+'.rulerSmallSize',mult1+'.input1')
@@ -299,6 +326,12 @@ def FTM_insertController( driverObj, driverAtt, destAttribute, sourceAttributeFo
 
 
 def FTM_addFluidTextureManipulators( fluid ):
+	'''
+	create manipulators for the texture parameters of a fluid
+	the parameter fluid can be a fluid Transform or a fluidShape
+	return the main control (rotate and scale), the texture origin control, the implode position control, the origin position offset, the root group of the rig
+	'''
+
 	(ft,fs) = FTM_getFluidElements(fluid)
 
 	# global group root
@@ -369,26 +402,26 @@ def FTM_addFluidTextureManipulators( fluid ):
 	# texture translate controller under the translate offset (depending if we want to have coordinate dependent of frequency or not we change the output)
 	# if the mode is frequencyDependent then the translate values of this control are exactly the values that are put into textureOrigin
 	# but if we want to be independent of the frequency then it is a multiply of the coordinate and of frequency
-	cv, cvShp = FTM_createNurbsCross(1.0,'fluidTextTranslateCtrl#',grpTextureSpaceMatch+'.invScaleMinus',grpTextureSpaceMatch+'.invScale')
-	cv.addAttr('frequencyDependentSpace',at='bool',dv=True,k=True)
-	cv.addAttr('outputPosition',at='double3',k=True)
-	cv.addAttr('outputPositionX', at='double', p='outputPosition')	
-	cv.addAttr('outputPositionY', at='double', p='outputPosition')	
-	cv.addAttr('outputPositionZ', at='double', p='outputPosition')
+	origCtrl, origCtrlShp = FTM_createNurbsCross(1.0,'fluidTextTranslateCtrl#',grpTextureSpaceMatch+'.invScaleMinus',grpTextureSpaceMatch+'.invScale')
+	origCtrl.addAttr('frequencyDependentSpace',at='bool',dv=True,k=True)
+	origCtrl.addAttr('outputPosition',at='double3',k=True)
+	origCtrl.addAttr('outputPositionX', at='double', p='outputPosition')	
+	origCtrl.addAttr('outputPositionY', at='double', p='outputPosition')	
+	origCtrl.addAttr('outputPositionZ', at='double', p='outputPosition')
 	multDivTranslateAndFreq = pm.createNode('multiplyDivide')
-	pm.connectAttr(cv+'.translate',multDivTranslateAndFreq+'.input1')
+	pm.connectAttr(origCtrl+'.translate',multDivTranslateAndFreq+'.input1')
 	pm.connectAttr(condFreq+'.outColorG',multDivTranslateAndFreq+'.input2X')
 	pm.connectAttr(condFreq+'.outColorG',multDivTranslateAndFreq+'.input2Y')
 	pm.connectAttr(condFreq+'.outColorG',multDivTranslateAndFreq+'.input2Z')
-	pm.connectAttr(multDivTranslateAndFreq+'.output',cv+'.outputPosition')
+	pm.connectAttr(multDivTranslateAndFreq+'.output',origCtrl+'.outputPosition')
 
 	nCube, nCubeShp = FTM_createNurbsCube(1.0,'fluidTextTranslateCtrlCube#', [grpTextureSpaceMatch+'.invScaleMinusDiv2',grpTextureSpaceMatch+'.invScaleDiv2',grpTextureSpaceMatch+'.invScaleMinusDiv2',grpTextureSpaceMatch+'.invScaleDiv2',grpTextureSpaceMatch+'.invScaleMinusDiv2',grpTextureSpaceMatch+'.invScaleDiv2'])
-	pm.parent(nCubeShp,cv,s=True,add=True)
+	pm.parent(nCubeShp,origCtrl,s=True,add=True)
 	pm.delete(nCube)
 
-	pm.connectAttr(cv+'.frequencyDependentSpace', grpTextureSpaceMatch+'.freqOnOff')
-	FTM_lockAndHide(cv, ['rx','ry','rz'])
-	pm.parent(cv, gpOffs, r=True)
+	pm.connectAttr(origCtrl+'.frequencyDependentSpace', grpTextureSpaceMatch+'.freqOnOff')
+	FTM_lockAndHide(origCtrl, ['rx','ry','rz'])
+	pm.parent(origCtrl, gpOffs, r=True)
 
 	# now the implode controller under the main control (implode is not frequency dependent and is not textureScale dependent BUT it is textureRotate dependent)
 	grpImplSpace = pm.group(em=True,n='fluidTextImplSpace#')
@@ -403,9 +436,9 @@ def FTM_addFluidTextureManipulators( fluid ):
 	pm.parent(grpImplSpace,grp,r=True)
 
 	# do the actual connections from the controllers to the fluid texture parameters (reconnect any in-connections already on the fluid parameters)
-	FTM_insertController( cv,'outputPosition.outputPositionX', fs+'.textureOriginX', cv+'.translateX' )
-	FTM_insertController( cv,'outputPosition.outputPositionY', fs+'.textureOriginY', cv+'.translateY' )
-	FTM_insertController( cv,'outputPosition.outputPositionZ', fs+'.textureOriginZ', cv+'.translateZ')	
+	FTM_insertController( origCtrl,'outputPosition.outputPositionX', fs+'.textureOriginX', origCtrl+'.translateX' )
+	FTM_insertController( origCtrl,'outputPosition.outputPositionY', fs+'.textureOriginY', origCtrl+'.translateY' )
+	FTM_insertController( origCtrl,'outputPosition.outputPositionZ', fs+'.textureOriginZ', origCtrl+'.translateZ')	
 
 	FTM_insertController( control,'scaleX', fs+'.textureScaleX' )
 	FTM_insertController( control,'scaleY', fs+'.textureScaleY' )
@@ -418,6 +451,8 @@ def FTM_addFluidTextureManipulators( fluid ):
 	FTM_insertController( impl,'translateX', fs+'.implodeCenterX')
 	FTM_insertController( impl,'translateY', fs+'.implodeCenterY')
 	FTM_insertController( impl,'translateZ', fs+'.implodeCenterZ')
+
+	return control, origCtrl, impl, gpOffs, grpRoot
 
 
 if __name__ == "__main__":
