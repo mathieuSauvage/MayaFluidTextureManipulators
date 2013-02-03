@@ -1,4 +1,4 @@
-#fluidTextureTransformController.py
+#fluidTextureManipulators.py
 
 import pymel.core as pm
 
