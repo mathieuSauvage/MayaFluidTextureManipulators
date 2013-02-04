@@ -325,6 +325,43 @@ def FTM_insertController( driverObj, driverAtt, destAttribute, sourceAttributeFo
 		pm.connectAttr( multDiv+'.outputX', destAttribute )
 
 
+def FTM_setupFluidForceRefresh ( fluidShape,  atts ):
+	import re
+	conns = pm.listConnections( fluidShape+'.voxelQuality', s=True, d=False, p=False  )
+	expr = None
+	text = None
+	attributesTrigger = atts[:] #shallow copy
+
+	if conns is not None and len(conns)>0 and fluidShape.hasAttr('voxelQualityChooser') :
+		if pm.objectType( conns[0], isType='expression' ) == False:
+			raise FTM_msCommandException('The fluid [ '+fluidShape+' ] has an incoming connection in attribute voxelQuality, unable to setup a refresh expression')
+		expr = conns[0]
+		text = pm.expression( expr, q=True, s=True)
+	else:
+		if len(conns)>0:
+			raise FTM_msCommandException('The fluid [ '+fluidShape+' ] has an incoming connection in attribute voxelQuality, unable to setup a refresh expression')
+		if fluidShape.hasAttr('voxelQualityChooser') == False:
+			current = pm.getAttr( fluidShape+'.voxelQuality' )
+			fluidShape.addAttr( 'voxelQualityChooser',  k=True, at='enum', en='faster=1:better=2', dv=current)
+
+	if text is not None:
+		#let's gather the trigger of refresh inside the expression
+		matches = re.findall(r'.*?\$trigs\[size\(\$trigs\)\]=(.*?);', text )  #$triggers[0]=.I[0];
+		for m in matches:
+			if re.match( r'\.I\[[0-9]+?\]', m) is None:
+				attributesTrigger.append(m)
+	text  = '// Fluid display Refresh expression\n'
+	text += '// you can add triggers here but you have to follow the current syntax\n'
+	text += 'float $trigs[];clear $trigs;\n\n'
+	for i in range(len(attributesTrigger)):
+		text += '$trigs[size($trigs)]='+attributesTrigger[i]+';\n'
+	text += '\n//Result\n'
+	text += 'voxelQuality = voxelQualityChooser;\n'
+	if expr :
+		pm.expression( expr, e=True, s=text, o=fluidShape, ae=False)
+	else:
+		pm.expression( s=text, o=fluidShape, ae=False, n='forceFluidDisplayRefreshExpr#')
+
 def FTM_addFluidTextureManipulators( fluid ):
 	'''
 	create manipulators for the texture parameters of a fluid
@@ -451,6 +488,9 @@ def FTM_addFluidTextureManipulators( fluid ):
 	FTM_insertController( impl,'translateX', fs+'.implodeCenterX')
 	FTM_insertController( impl,'translateY', fs+'.implodeCenterY')
 	FTM_insertController( impl,'translateZ', fs+'.implodeCenterZ')
+
+	# add an expression to force the refresh of the display of the fluid when the maipulators change
+	FTM_setupFluidForceRefresh( fs, [control+'.sx', control+'.sy', control+'.sz', control+'.rx', control+'.ry', control+'.rz', origCtrl+'.tx', origCtrl+'.ty', origCtrl+'.tz', impl+'.tx', impl+'.ty', impl+'.tz'] )
 
 	return control, origCtrl, impl, gpOffs, grpRoot
 
