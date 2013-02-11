@@ -30,7 +30,7 @@ So deleting this group will delete the entire rig.
 
 * **frequency dependent space** the texture origin of a fluid is actually dependent on the frequency. But this will free the controller from the frequency, so you can animate it and later change the frequency and still have a correct 3D space translation of the texture
 
-this controller's parent is a group offset so you can move the controller in the wold to match a feature of your fluid (without affecting the fluid texture origin values) and start a tracking for example.
+this controller's parent is a group that allow you to offset the controller position in the world to match a feature of your fluid (without affecting the fluid texture origin values) and start a tracking for example.
 
 *fluidTextImplodeCtrl#*:
 
