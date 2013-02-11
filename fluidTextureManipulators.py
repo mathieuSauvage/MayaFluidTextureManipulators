@@ -152,7 +152,7 @@ def FTM_createNurbsCircle( size, axis, name ):
 	return circle, shps[0]
 
 def FTM_createImplodeController():
-	implMain, implMainShp = FTM_createNurbsCross(.2,'fluidTextImplodeCtrl#',None,None)
+	implMain, implMainShp = FTM_createNurbsCross(.2,'FT_ImplodeCtrl#',None,None)
 	c0, cs0 = FTM_createNurbsCircle( .2, (1,0,0), 'cTemp#' )
 	pm.parent(cs0, implMain, add=True, s=True)
 	pm.delete( c0 )
@@ -461,7 +461,7 @@ def FTM_addFluidTextureManipulators( fluid ):
 	pm.parent(origCtrl, gpOffs, r=True)
 
 	# now the implode controller under the main control (implode is not frequency dependent and is not textureScale dependent BUT it is textureRotate dependent)
-	grpImplSpace = pm.group(em=True,n='FT_ImplSpace#')
+	grpImplSpace = pm.group(em=True,n='FluidTextImplSpace#')
 	pm.setAttr(grpImplSpace+'.scale', (5,5,5))
 	pm.connectAttr( control+'.rotateX', grpImplSpace+'.rotateX'  )
 	pm.connectAttr( control+'.rotateY', grpImplSpace+'.rotateY'  )
