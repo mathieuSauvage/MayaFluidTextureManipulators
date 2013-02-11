@@ -42,7 +42,7 @@ this controller's parent is a group that allow you to offset the controller posi
 
 ## Why?
 
-On some occasions, like a very directional smoke for example, it can be nice to animate the fluid texture translation to follow the fluid movement. But Maya fluid texture transformations are difficult to visualize and control. It's also poorly documented, like the implode center. I notice that many people think that the implode position is in world space while it's actually not exactly world space, also implode is dependent on the textureRotate but not on the textureScale. So this rig give a good and precise way to animate those parameters and match the texture transformations with the movement of some features of your fluid.
+On some occasions, like a very directional smoke for example, it can be nice to animate the fluid texture translation to follow the fluid movement. But Maya fluid texture transformations are difficult to visualize and control. It's also poorly documented, like the implode center, I notice that many people think that the implode position is in world space while it's actually not, also implode is dependent on the textureRotate but not on the textureScale. So this rig give a good and precise way to animate those parameters and match the texture transformations with the movement of some features of your fluid.
 
 ## Usage in Maya
 
