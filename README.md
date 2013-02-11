@@ -32,7 +32,7 @@ So deleting this group will delete the entire rig.
 
 this controller's parent is a group that allow you to offset the controller position in the world to match a feature of your fluid (without affecting the fluid texture origin values) and start a tracking for example.
 
-*fluidTextImplodeCtrl#*:
+*FT_ImplodeCtrl#*:
 
 * **translate** change the texture's implode position of the fluid.
 
