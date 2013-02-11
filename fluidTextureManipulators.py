@@ -188,7 +188,7 @@ def FTM_createBaseControl( fluidTransformParent ):
 	sSize = 1
 	bSize = 10.0
 	bSize2 = 2.0*bSize
-	cv = pm.curve( p = [(0,0,0), (bSize,0,0), (0,0,0), (0,bSize,0), (0,0,0), (0,0,bSize)], d=1, n='fluidTextTransCtrl#')
+	cv = pm.curve( p = [(0,0,0), (bSize,0,0), (0,0,0), (0,bSize,0), (0,0,0), (0,0,bSize)], d=1, n='FT_RotateAndScaleCtrl#')
 	cvChilds = pm.listRelatives( cv, s=True )
 
 	cv.addAttr( 'controlSize', k=True, dv=bSize)
@@ -358,7 +358,7 @@ def FTM_setupFluidForceRefresh ( fluidShape,  atts ):
 	text += '\n//Result\n'
 	text += 'voxelQuality = voxelQualityChooser;\n'
 	if expr :
-		pm.expression( expr, e=True, s=text, o=fluidShape, ae=False)
+		pm.expression( expr, e=True, s=text, o=fluidShape, ae=True)
 	else:
 		pm.expression( s=text, o=fluidShape, ae=False, n='forceFluidDisplayRefreshExpr#')
 
@@ -439,7 +439,7 @@ def FTM_addFluidTextureManipulators( fluid ):
 	# texture translate controller under the translate offset (depending if we want to have coordinate dependent of frequency or not we change the output)
 	# if the mode is frequencyDependent then the translate values of this control are exactly the values that are put into textureOrigin
 	# but if we want to be independent of the frequency then it is a multiply of the coordinate and of frequency
-	origCtrl, origCtrlShp = FTM_createNurbsCross(1.0,'fluidTextTranslateCtrl#',grpTextureSpaceMatch+'.invScaleMinus',grpTextureSpaceMatch+'.invScale')
+	origCtrl, origCtrlShp = FTM_createNurbsCross(1.0,'FT_OriginCtrl#',grpTextureSpaceMatch+'.invScaleMinus',grpTextureSpaceMatch+'.invScale')
 	origCtrl.addAttr('frequencyDependentSpace',at='bool',dv=True,k=True)
 	origCtrl.addAttr('outputPosition',at='double3',k=True)
 	origCtrl.addAttr('outputPositionX', at='double', p='outputPosition')	
@@ -461,7 +461,7 @@ def FTM_addFluidTextureManipulators( fluid ):
 	pm.parent(origCtrl, gpOffs, r=True)
 
 	# now the implode controller under the main control (implode is not frequency dependent and is not textureScale dependent BUT it is textureRotate dependent)
-	grpImplSpace = pm.group(em=True,n='fluidTextImplSpace#')
+	grpImplSpace = pm.group(em=True,n='FT_ImplSpace#')
 	pm.setAttr(grpImplSpace+'.scale', (5,5,5))
 	pm.connectAttr( control+'.rotateX', grpImplSpace+'.rotateX'  )
 	pm.connectAttr( control+'.rotateY', grpImplSpace+'.rotateY'  )
